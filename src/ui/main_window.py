@@ -1,5 +1,5 @@
 import os
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLabel, QFileDialog, QSlider, QMessageBox, QLineEdit
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLabel, QFileDialog, QSlider, QMessageBox, QLineEdit, QInputDialog
 from PyQt6.QtCore import Qt
 from src.logic.database import Database
 from src.logic.player import AudioPlayer
@@ -195,5 +195,5 @@ class MainWindow(QMainWindow):
             self.song_list_widget.setCurrentRow(count - 1)
             self.play_selected_song()
 
-    def show_statistics(self):
+    def show_statistics(self) -> None:
         pass

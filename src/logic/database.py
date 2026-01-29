@@ -79,3 +79,42 @@ class Database:
             cursor = conn.cursor()
             cursor.execute(sql, (search_term, search_term))
             return cursor.fetchall()
+    
+    def create_playlist(self, name: str, song_ids: list[int]) -> bool:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute("INSERT INTO playlists (name) VALUES (?)", (name,))
+                playlist_id = cursor.lastrowid
+                for song_id in song_ids:
+                    cursor.execute("INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)", (playlist_id, song_id))
+                conn.commit()
+                return True
+            except sqlite3.IntegrityError: #If paylist name exists
+                return False
+
+    def get_playlists(self) -> list[tuple]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name FROM playlists")
+            return cursor.fetchall()
+
+    def get_playlist_songs(self, playlist_id: int) -> list[tuple]:
+        query = """
+        SELECT s.id, s.title, s.artist, s.genre, s.file_path, s.play_count
+        FROM songs s
+        JOIN playlist_songs link ON s.id = link.song_id
+        WHERE link.playlist_id = ?
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, (playlist_id,))
+            return cursor.fetchall()
+
+    def delete_playlist(self, playlist_id: int) -> None:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM playlist_songs WHERE playlist_id = ?", (playlist_id,))
+            cursor.execute("DELETE FROM playlists WHERE id = ?", (playlist_id,))
+            conn.commit()
+
