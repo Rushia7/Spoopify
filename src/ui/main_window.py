@@ -1,9 +1,10 @@
 import os
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLabel, QFileDialog, QSlider, QMessageBox
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLabel, QFileDialog, QSlider, QMessageBox, QLineEdit
 from PyQt6.QtCore import Qt
 from src.logic.database import Database
 from src.logic.player import AudioPlayer
 from mutagen.easyid3 import EasyID3
+import random
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -19,11 +20,22 @@ class MainWindow(QMainWindow):
         self._refresh_song_list()
 
     def _setup_ui(self) -> None:
+        #central widget, main layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
         main_layout = QVBoxLayout(central_widget)
 
+        #search
+        search_layout = QHBoxLayout()
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText("Search title or artist")
+        self.search_bar.textChanged.connect(self.search_music)
+        search_layout.addWidget(QLabel("🔍"))
+        search_layout.addWidget(self.search_bar)
+        main_layout.addLayout(search_layout)
+
+        #song list
         self.song_list_widget = QListWidget()
         main_layout.addWidget(self.song_list_widget)
         self.song_list_widget.itemDoubleClicked.connect(self.play_selected_song)
@@ -32,28 +44,39 @@ class MainWindow(QMainWindow):
         self.lbl_now_playing.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(self.lbl_now_playing)
 
-        #БУТОНИ
+        #main buttons
         controls_layout = QHBoxLayout()
 
-        btn_add = QPushButton("Add Music")
+        btn_add = QPushButton("➕")
         btn_add.clicked.connect(self.add_files)
         
-        btn_play = QPushButton("Play")
+        btn_play = QPushButton("▶️")
         btn_play.clicked.connect(self.player.play)
 
-        btn_pause = QPushButton("Pause")
+        btn_pause = QPushButton("⏸️")
         btn_pause.clicked.connect(self.player.pause)
         
-        btn_stop = QPushButton("Stop")
+        btn_stop = QPushButton("⏹️")
         btn_stop.clicked.connect(self.player.stop)
 
+        btn_next = QPushButton("⏭️")
+        btn_previous = QPushButton("⏮️")
+
+        btn_shuffle = QPushButton("🔀")
+        btn_shuffle.clicked.connect(self.shuffle_songs)
+
+
         controls_layout.addWidget(btn_add)
+        controls_layout.addWidget(btn_shuffle)
+        controls_layout.addWidget(btn_previous)
         controls_layout.addWidget(btn_play)
         controls_layout.addWidget(btn_pause)
         controls_layout.addWidget(btn_stop)
+        controls_layout.addWidget(btn_next)
 
         main_layout.addLayout(controls_layout)
 
+        #volume
         volume_layout = QHBoxLayout()
         lbl_vol = QLabel("Volume:")
         
@@ -96,9 +119,13 @@ class MainWindow(QMainWindow):
             self._refresh_song_list()
             QMessageBox.information(self, "Success", f"Added {count} songs with metadata!")
 
-    def _refresh_song_list(self) -> None:
+    def _refresh_song_list(self, songs_data: list = None) -> None:
         self.song_list_widget.clear()
-        self.current_songs = self.db.get_all_songs()
+
+        if songs_data == None:
+            self.current_songs = self.db.get_all_songs()
+        else:
+            self.current_songs = songs_data
         
         for song in self.current_songs:
             name_artist = f"{song[1]} - {song[2]}"
@@ -119,3 +146,15 @@ class MainWindow(QMainWindow):
         self.player.play()
 
         self.db.increment_play_count(song_id)
+    
+    def search_music(self, text: str) -> None:
+        if not text:
+            self._refresh_song_list()
+        else:
+            results = self.db.search_songs(text)
+            self._refresh_song_list(results)
+
+    def shuffle_songs(self):
+        if self.current_songs:
+            random.shuffle(self.current_songs)
+            self._refresh_song_list(self.current_songs)

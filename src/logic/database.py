@@ -66,3 +66,16 @@ class Database:
             cursor = conn.cursor()
             cursor.execute(query, (song_id,))
             conn.commit()
+
+    def search_songs(self, search: str) -> list[tuple]:
+        search_term = f"%{search}%"
+        sql = """
+        SELECT id, title, artist, genre, file_path, play_count 
+        FROM songs 
+        WHERE title LIKE ? OR artist LIKE ?
+        """
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql, (search_term, search_term))
+            return cursor.fetchall()
