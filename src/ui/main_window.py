@@ -1,0 +1,121 @@
+import os
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLabel, QFileDialog, QSlider, QMessageBox
+from PyQt6.QtCore import Qt
+from src.logic.database import Database
+from src.logic.player import AudioPlayer
+from mutagen.easyid3 import EasyID3
+
+class MainWindow(QMainWindow):
+    def __init__(self) -> None:
+        super().__init__()
+        self.setWindowTitle("Spoopify")
+        self.resize(600, 400)
+
+        self.db = Database()
+        self.player = AudioPlayer()
+
+        self.current_songs: list[tuple] = []
+        self._setup_ui()
+        self._refresh_song_list()
+
+    def _setup_ui(self) -> None:
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        main_layout = QVBoxLayout(central_widget)
+
+        self.song_list_widget = QListWidget()
+        main_layout.addWidget(self.song_list_widget)
+        self.song_list_widget.itemDoubleClicked.connect(self.play_selected_song)
+
+        self.lbl_now_playing = QLabel("Ready to play")
+        self.lbl_now_playing.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.lbl_now_playing)
+
+        #БУТОНИ
+        controls_layout = QHBoxLayout()
+
+        btn_add = QPushButton("Add Music")
+        btn_add.clicked.connect(self.add_files)
+        
+        btn_play = QPushButton("Play")
+        btn_play.clicked.connect(self.player.play)
+
+        btn_pause = QPushButton("Pause")
+        btn_pause.clicked.connect(self.player.pause)
+        
+        btn_stop = QPushButton("Stop")
+        btn_stop.clicked.connect(self.player.stop)
+
+        controls_layout.addWidget(btn_add)
+        controls_layout.addWidget(btn_play)
+        controls_layout.addWidget(btn_pause)
+        controls_layout.addWidget(btn_stop)
+
+        main_layout.addLayout(controls_layout)
+
+        volume_layout = QHBoxLayout()
+        lbl_vol = QLabel("Volume:")
+        
+        self.slider_vol = QSlider(Qt.Orientation.Horizontal)
+        self.slider_vol.setRange(0, 100)
+        self.slider_vol.setValue(50)
+        self.slider_vol.valueChanged.connect(self.player.set_volume)
+        
+        volume_layout.addWidget(lbl_vol)
+        volume_layout.addWidget(self.slider_vol)
+        main_layout.addLayout(volume_layout)
+
+    def add_files(self) -> None:
+        files, _ = QFileDialog.getOpenFileNames(
+            self, "Select Songs", os.path.expanduser("~"), "Audio (*.mp3 *.wav)"
+        )
+        
+        if files:
+            count = 0
+            for file_path in files:
+                filename = os.path.basename(file_path)
+                title = os.path.splitext(filename)[0]
+                artist = "Unknown Artist"
+                genre = "Unknown Genre"
+
+                try:
+                    audio = EasyID3(file_path)
+                    if 'title' in audio:
+                        title = audio['title'][0]
+                    if 'artist' in audio:
+                        artist = audio['artist'][0]
+                    if 'genre' in audio:
+                        genre = audio['genre'][0]
+                except Exception:
+                    pass
+
+                self.db.add_song(title, artist, genre, file_path)
+                count += 1
+            
+            self._refresh_song_list()
+            QMessageBox.information(self, "Success", f"Added {count} songs with metadata!")
+
+    def _refresh_song_list(self) -> None:
+        self.song_list_widget.clear()
+        self.current_songs = self.db.get_all_songs()
+        
+        for song in self.current_songs:
+            name_artist = f"{song[1]} - {song[2]}"
+            self.song_list_widget.addItem(name_artist)
+
+    def play_selected_song(self) -> None:
+        row = self.song_list_widget.currentRow()
+        if row >= 0 and row < len(self.current_songs):
+            song_data = self.current_songs[row]
+
+        song_id = song_data[0]
+        title = song_data[1]
+        file_path = song_data[4]
+
+        self.lbl_now_playing.setText(f"Playing: {title}")
+
+        self.player.load_song(file_path)
+        self.player.play()
+
+        self.db.increment_play_count(song_id)

@@ -3,6 +3,7 @@ import sqlite3
 class Database:
     def __init__(self, db_name: str = "music_player.db") -> None:
         self.db_name = db_name
+        self._create_tables()
     
     def _get_connection(self) -> sqlite3.Connection:
         return sqlite3.connect(self.db_name)
@@ -59,7 +60,7 @@ class Database:
             cursor.execute(query)
             return cursor.fetchall()
 
-    def increment_play_count(self):
+    def increment_play_count(self, song_id: int) -> None:
         query = "UPDATE songs SET play_count = play_count + 1 WHERE id = ?"
         with self._get_connection() as conn:
             cursor = conn.cursor()
