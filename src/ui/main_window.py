@@ -60,19 +60,25 @@ class MainWindow(QMainWindow):
         btn_stop.clicked.connect(self.player.stop)
 
         btn_next = QPushButton("⏭️")
+        btn_next.clicked.connect(self.play_next)
+
         btn_previous = QPushButton("⏮️")
+        btn_previous.clicked.connect(self.play_previous)
 
         btn_shuffle = QPushButton("🔀")
         btn_shuffle.clicked.connect(self.shuffle_songs)
 
+        btn_stats = QPushButton("📊")
+        btn_stats.clicked.connect(self.show_statistics)
 
-        controls_layout.addWidget(btn_add)
         controls_layout.addWidget(btn_shuffle)
         controls_layout.addWidget(btn_previous)
         controls_layout.addWidget(btn_play)
         controls_layout.addWidget(btn_pause)
         controls_layout.addWidget(btn_stop)
         controls_layout.addWidget(btn_next)
+        controls_layout.addWidget(btn_add)
+        controls_layout.addWidget(btn_stats)
 
         main_layout.addLayout(controls_layout)
 
@@ -154,7 +160,40 @@ class MainWindow(QMainWindow):
             results = self.db.search_songs(text)
             self._refresh_song_list(results)
 
-    def shuffle_songs(self):
+    def shuffle_songs(self) -> None:
         if self.current_songs:
             random.shuffle(self.current_songs)
             self._refresh_song_list(self.current_songs)
+
+    def play_next(self) -> None:
+        current_row = self.song_list_widget.currentRow()
+        count = self.song_list_widget.count()
+
+        if count == 0:
+            return
+
+        if current_row < count - 1:
+            next_row = current_row + 1
+            self.song_list_widget.setCurrentRow(next_row)
+            self.play_selected_song()
+        else:
+            self.song_list_widget.setCurrentRow(0)
+            self.play_selected_song()
+
+    def play_previous(self) -> None:
+        current_row = self.song_list_widget.currentRow()
+        count = self.song_list_widget.count()
+        previous_row = current_row - 1
+
+        if count == 0:
+            return
+
+        if previous_row >= 0:
+            self.song_list_widget.setCurrentRow(previous_row)
+            self.play_selected_song()
+        else:
+            self.song_list_widget.setCurrentRow(count - 1)
+            self.play_selected_song()
+
+    def show_statistics(self):
+        pass
