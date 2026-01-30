@@ -26,14 +26,28 @@ class MainWindow(QMainWindow):
 
         main_layout = QVBoxLayout(central_widget)
 
-        #search
-        search_layout = QHBoxLayout()
+        #top layout
+        top_layout = QHBoxLayout()
+
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search title or artist")
         self.search_bar.textChanged.connect(self.search_music)
-        search_layout.addWidget(QLabel("🔍"))
-        search_layout.addWidget(self.search_bar)
-        main_layout.addLayout(search_layout)
+
+        btn_add = QPushButton("➕")
+        btn_add.clicked.connect(self.add_files)
+
+        btn_save_playlist = QPushButton("📥")
+        btn_save_playlist.clicked.connect(self.save_playlist)
+        btn_load_playlist = QPushButton("📤")
+        btn_load_playlist.clicked.connect(self.load_playlist)
+
+        top_layout.addWidget(QLabel("🔍"))
+        top_layout.addWidget(self.search_bar)
+        top_layout.addWidget(btn_save_playlist)
+        top_layout.addWidget(btn_load_playlist)
+        top_layout.addWidget(btn_add)
+
+        main_layout.addLayout(top_layout)
 
         #song list
         self.song_list_widget = QListWidget()
@@ -44,11 +58,8 @@ class MainWindow(QMainWindow):
         self.lbl_now_playing.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(self.lbl_now_playing)
 
-        #main buttons
+        #bot_layout
         controls_layout = QHBoxLayout()
-
-        btn_add = QPushButton("➕")
-        btn_add.clicked.connect(self.add_files)
         
         btn_play = QPushButton("▶️")
         btn_play.clicked.connect(self.player.play)
@@ -77,7 +88,6 @@ class MainWindow(QMainWindow):
         controls_layout.addWidget(btn_pause)
         controls_layout.addWidget(btn_stop)
         controls_layout.addWidget(btn_next)
-        controls_layout.addWidget(btn_add)
         controls_layout.addWidget(btn_stats)
 
         main_layout.addLayout(controls_layout)
@@ -194,6 +204,12 @@ class MainWindow(QMainWindow):
         else:
             self.song_list_widget.setCurrentRow(count - 1)
             self.play_selected_song()
+
+    def save_playlist(self):
+        pass
+
+    def load_playlist(self):
+        pass
 
     def show_statistics(self) -> None:
         pass
