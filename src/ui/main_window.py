@@ -1,5 +1,5 @@
 import os
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLabel, QFileDialog, QSlider, QMessageBox, QLineEdit, QInputDialog
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLabel, QFileDialog, QSlider, QMessageBox, QLineEdit, QInputDialog, QAbstractItemView
 from PyQt6.QtCore import Qt
 from src.logic.database import Database
 from src.logic.player import AudioPlayer
@@ -40,17 +40,21 @@ class MainWindow(QMainWindow):
         btn_save_playlist.clicked.connect(self.save_playlist)
         btn_load_playlist = QPushButton("📤")
         btn_load_playlist.clicked.connect(self.load_playlist)
+        btn_delete_playlist = QPushButton("❌")
+        btn_delete_playlist.clicked.connect(self.delete_playlist)
 
         top_layout.addWidget(QLabel("🔍"))
         top_layout.addWidget(self.search_bar)
         top_layout.addWidget(btn_save_playlist)
         top_layout.addWidget(btn_load_playlist)
+        top_layout.addWidget(btn_delete_playlist)
         top_layout.addWidget(btn_add)
 
         main_layout.addLayout(top_layout)
 
         #song list
         self.song_list_widget = QListWidget()
+        self.song_list_widget.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         main_layout.addWidget(self.song_list_widget)
         self.song_list_widget.itemDoubleClicked.connect(self.play_selected_song)
 
@@ -205,11 +209,51 @@ class MainWindow(QMainWindow):
             self.song_list_widget.setCurrentRow(count - 1)
             self.play_selected_song()
 
-    def save_playlist(self):
-        pass
+    def save_playlist(self) -> None:
+        if not self.current_songs:
+            QMessageBox.warning(self, "Error", "List is empty!")
+            return
+        selected_indexes = self.song_list_widget.selectedIndexes()
+        songs_to_save = []
+        
+        if selected_indexes:
+            for index in selected_indexes:
+                row = index.row()
+                if row < len(self.current_songs):
+                    songs_to_save.append(self.current_songs[row])
+            
+            info_text = f"Save {len(songs_to_save)} selected songs?"
+        else:
+            songs_to_save = self.current_songs
+            info_text = "No songs selected. Save ALL visible songs?"
 
-    def load_playlist(self):
-        pass
+        name, ok = QInputDialog.getText(self, "Save Playlist", f"{info_text}\nEnter Playlist Name:")
+        
+        if ok and name:
+            song_ids = [song[0] for song in songs_to_save]
+            
+            success = self.db.create_playlist(name, song_ids)
+            if success:
+                QMessageBox.information(self, "Success", f"Playlist '{name}' saved with {len(song_ids)} songs!")
+            else:
+                QMessageBox.warning(self, "Error", "Playlist with this name already exists.")
 
+
+    def load_playlist(self) -> None:
+        playlists = self.db.get_playlists()
+        if not playlists:
+            QMessageBox.warning(self, "Error", "No playlists found!")
+            return
+        playlist_names = [playlist[1] for playlist in playlists]
+        item, ok = QInputDialog.getItem(self, "Load Playlist", "Choose a playlist:", playlist_names, 0, False)
+        if ok and item:
+            playlist_id = [p[0] for p in playlists if p[1] == item]
+            songs = self.db.get_playlist_songs(playlist_id[0])
+            self._refresh_song_list(songs)
+            QMessageBox.information(self, "Loaded", f"Loaded playlist '{item}' with {len(songs)} songs.")
+
+
+    def delete_playlist(self) -> None:
+        pass
     def show_statistics(self) -> None:
         pass
