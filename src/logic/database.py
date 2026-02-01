@@ -117,4 +117,32 @@ class Database:
             cursor.execute("DELETE FROM playlist_songs WHERE playlist_id = ?", (playlist_id,))
             cursor.execute("DELETE FROM playlists WHERE id = ?", (playlist_id,))
             conn.commit()
+    
+    def get_statistics(self) -> str:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT title, artist, play_count FROM songs ORDER BY play_count DESC LIMIT 1")
+            top_song = cursor.fetchone()
 
+            cursor.execute("""
+                SELECT artist, SUM(play_count) as total 
+                FROM songs 
+                WHERE artist != 'Unknown Artist' 
+                GROUP BY artist 
+                ORDER BY total DESC LIMIT 1
+            """)
+            top_artist = cursor.fetchone()
+
+            lines = ["📊  --- СТАТИСТИКА ---  📊\n"]
+            
+            if top_song and top_song[2] > 0:
+                lines.append(f"🎵 Най-слушана песен:\n{top_song[0]} - {top_song[1]} ({top_song[2]} слушания)")
+            else:
+                lines.append("🎵 Най-слушана песен: Няма данни.")
+
+            if top_artist and top_artist[1] > 0:
+                lines.append(f"\n🎤 Любим изпълнител:\n{top_artist[0]} ({top_artist[1]} слушания)")
+            else:
+                lines.append("\n🎤 Любим изпълнител: Няма данни.")
+            
+            return "\n".join(lines)
