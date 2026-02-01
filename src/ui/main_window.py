@@ -254,6 +254,31 @@ class MainWindow(QMainWindow):
 
 
     def delete_playlist(self) -> None:
-        pass
+        playlists = self.db.get_playlists()
+        
+        if not playlists:
+            QMessageBox.information(self, "Info", "No playlists found.")
+            return
+
+        playlist_names = [p[1] for p in playlists]
+        item, ok = QInputDialog.getItem(self, "Delete Playlist", "Select playlist to delete:", playlist_names, 0, False)
+        
+        if ok and item:
+            reply = QMessageBox.question(
+                self, "Confirm Delete", 
+                f"Are you sure you want to delete '{item}'?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                playlist_id = None
+                for p in playlists:
+                    if p[1] == item:
+                        playlist_id = p[0]
+                        break
+                
+                if playlist_id is not None:
+                    self.db.delete_playlist(playlist_id)
+
     def show_statistics(self) -> None:
         pass
