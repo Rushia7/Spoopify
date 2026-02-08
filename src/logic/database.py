@@ -133,16 +133,42 @@ class Database:
             """)
             top_artist = cursor.fetchone()
 
-            lines = ["📊  --- СТАТИСТИКА ---  📊\n"]
+            cursor.execute("""
+                SELECT genre, SUM(play_count) as total 
+                FROM songs 
+                WHERE genre != 'Unknown Genre' 
+                GROUP BY genre 
+                ORDER BY total DESC LIMIT 1
+            """)
+            top_genre = cursor.fetchone()
+
+            lines = ["STATS"]
             
             if top_song and top_song[2] > 0:
-                lines.append(f"🎵 Най-слушана песен:\n{top_song[0]} - {top_song[1]} ({top_song[2]} слушания)")
+                lines.append(f"Top song:\n{top_song[0]} - {top_song[1]} ({top_song[2]} times streamed)")
             else:
-                lines.append("🎵 Най-слушана песен: Няма данни.")
+                lines.append("Top song:\nno data")
 
             if top_artist and top_artist[1] > 0:
-                lines.append(f"\n🎤 Любим изпълнител:\n{top_artist[0]} ({top_artist[1]} слушания)")
+                lines.append(f"Top artist:\n{top_artist[0]} ({top_artist[1]} times streamed)")
             else:
-                lines.append("\n🎤 Любим изпълнител: Няма данни.")
+                lines.append("Top artist:\nno data")
+
+            if top_genre and top_genre[1] > 0:
+                lines.append(f"Top genre:\n{top_genre[0]} ({top_genre[1]} times streamed)")
+            else:
+                lines.append("Top genre:\nno data")
             
             return "\n".join(lines)
+
+    def get_song_by_meta(self, title: str, artist: str) -> tuple | None:
+        sql = """
+        SELECT id, title, artist, genre, file_path, play_count 
+        FROM songs 
+        WHERE LOWER(title) = ? AND LOWER(artist) = ?
+        LIMIT 1
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql, (title.lower(), artist.lower()))
+            return cursor.fetchone()

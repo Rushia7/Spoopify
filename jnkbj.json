@@ -1,0 +1,26 @@
+[
+    {
+        "title": "1",
+        "artist": "Unknown Artist",
+        "genre": "Unknown Genre",
+        "path": "/home/naedro/Music/1.mp3"
+    },
+    {
+        "title": "Grocery Store2",
+        "artist": "Unknown Artist",
+        "genre": "Unknown Genre",
+        "path": "/home/naedro/Music/3 pesni/Grocery Store2.wav"
+    },
+    {
+        "title": "NIKOLA_FINALNO",
+        "artist": "Unknown Artist",
+        "genre": "Unknown Genre",
+        "path": "/home/naedro/Music/3 pesni/NIKOLA_FINALNO.wav"
+    },
+    {
+        "title": "Grocery Stor",
+        "artist": "Unknown Artist",
+        "genre": "Unknown Genre",
+        "path": "/home/naedro/Music/3 pesni/Grocery Stor.wav"
+    }
+]
