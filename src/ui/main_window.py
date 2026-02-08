@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Spoopify")
         self.resize(1000, 600)
 
-        self.db = Database()
+        self.database = Database()
         self.player = AudioPlayer()
 
         self.player.player.mediaStatusChanged.connect(self.on_media_status_changed)
@@ -181,7 +181,7 @@ class MainWindow(QMainWindow):
                     if 'genre' in audio: genre = audio['genre'][0]
                 except Exception:
                     pass
-                self.db.add_song(title, artist, genre, file_path)
+                self.database.add_song(title, artist, genre, file_path)
                 count += 1
             
             self._refresh_library_list()
@@ -190,7 +190,7 @@ class MainWindow(QMainWindow):
     def _refresh_library_list(self, songs_data: list = None) -> None:
         self.library_list.clear()
         if songs_data is None:
-            data = self.db.get_all_songs()
+            data = self.database.get_all_songs()
         else:
             data = songs_data
         
@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
         if not text:
             self._refresh_library_list()
         else:
-            results = self.db.search_songs(text)
+            results = self.database.search_songs(text)
             self._refresh_library_list(results)
 
     def add_to_queue_and_play(self, item: QListWidgetItem) -> None:
@@ -233,7 +233,7 @@ class MainWindow(QMainWindow):
             self.lbl_now_playing.setText(f"Playing: {data[1]} - {data[2]}")
             self.player.load_song(data[4])
             self.player.play()
-            self.db.increment_play_count(data[0])
+            self.database.increment_play_count(data[0])
 
     def play_next(self) -> None:
         count = self.queue_list.count()
@@ -292,13 +292,13 @@ class MainWindow(QMainWindow):
                 data = item.data(Qt.ItemDataRole.UserRole)
                 song_ids.append(data[0])
             
-            if self.db.create_playlist(name, song_ids):
+            if self.database.create_playlist(name, song_ids):
                 QMessageBox.information(self, "Success", f"Saved {name}")
             else:
                 QMessageBox.warning(self, "Error", "Name already exists.")
 
     def load_playlist(self) -> None:
-        playlists = self.db.get_playlists()
+        playlists = self.database.get_playlists()
         if not playlists:
             QMessageBox.information(self, "Info", "No playlists found.")
             return
@@ -308,7 +308,7 @@ class MainWindow(QMainWindow):
         
         if ok and item:
             pid = [p[0] for p in playlists if p[1] == item]
-            songs = self.db.get_playlist_songs(pid[0])
+            songs = self.database.get_playlist_songs(pid[0])
             
             for s in songs:
                 self._add_item_to_queue(s)
@@ -316,7 +316,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Loaded", f"Added {len(songs)} songs to queue.")
 
     def delete_playlist(self) -> None:
-        playlists = self.db.get_playlists()
+        playlists = self.database.get_playlists()
         if not playlists: return
 
         names = [p[1] for p in playlists]
@@ -324,16 +324,16 @@ class MainWindow(QMainWindow):
         
         if ok and item:
             playlist_id = [p[0] for p in playlists if p[1] == item]
-            self.db.delete_playlist(playlist_id[0])
+            self.database.delete_playlist(playlist_id[0])
             QMessageBox.information(self, "Deleted", f"Playlist {item} deleted.")
 
     def show_statistics(self) -> None:
-        report = self.db.get_statistics()
+        report = self.database.get_statistics()
         QMessageBox.information(self, "Statistics", report)
 
     def import_playlist_from_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Import Playlist to DB", "", 
+            self, "Import playlist to database", "", 
             "JSON Playlist (*.json)"
         )
         
@@ -361,7 +361,7 @@ class MainWindow(QMainWindow):
                     title = entry.get("title", "Unknown")
                     artist = entry.get("artist", "Unknown")
                     
-                    local_song = self.db.get_song_by_meta(title, artist)
+                    local_song = self.database.get_song_by_meta(title, artist)
                     
                     if local_song:
                         song_ids.append(local_song[0])
@@ -372,7 +372,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, "Error", "No matching songs found in your library!")
                 return
 
-            success = self.db.create_playlist(playlist_name, song_ids)
+            success = self.database.create_playlist(playlist_name, song_ids)
             
             if success:
                 msg = f"Playlist {playlist_name} saved to database with {len(song_ids)} songs."
@@ -386,7 +386,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Failed to import: {e}")
 
     def export_playlist_to_file(self) -> None:
-        playlists = self.db.get_playlists()
+        playlists = self.database.get_playlists()
         
         if not playlists:
             QMessageBox.warning(self, "Info", "No saved playlists to export.")
@@ -398,7 +398,7 @@ class MainWindow(QMainWindow):
         if ok and item_name:
             playlist_id = [p[0] for p in playlists if p[1] == item_name][0]
             
-            songs = self.db.get_playlist_songs(playlist_id)
+            songs = self.database.get_playlist_songs(playlist_id)
             
             if not songs:
                 QMessageBox.warning(self, "Empty", "This playlist is empty.")
