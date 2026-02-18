@@ -60,6 +60,7 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.search_bar)
 
         self.library_list = QListWidget()
+        self.library_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.library_list.itemDoubleClicked.connect(self.add_to_queue_and_play)
         left_layout.addWidget(self.library_list)
 
@@ -277,7 +278,7 @@ class MainWindow(QMainWindow):
         selected = self.queue_list.selectedItems()
         for item in selected:
             self.queue_list.takeItem(self.queue_list.row(item))
-
+            
     def save_playlist(self) -> None:
         count = self.queue_list.count()
         if count == 0:

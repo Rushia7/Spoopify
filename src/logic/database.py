@@ -165,10 +165,10 @@ class Database:
         sql = """
         SELECT id, title, artist, genre, file_path, play_count 
         FROM songs 
-        WHERE LOWER(title) = ? AND LOWER(artist) = ?
+        WHERE title = ? AND artist = ?
         LIMIT 1
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(sql, (title.lower(), artist.lower()))
+            cursor.execute(sql, (title, artist))
             return cursor.fetchone()
